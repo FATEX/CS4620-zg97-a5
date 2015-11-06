@@ -62,8 +62,70 @@ public class CubicBezier {
     private void tessellate() {
     	 // TODO A5
     	//SOLUTION
-    	
+    	ArrayList<Vector2> controlPoints = new ArrayList<Vector2>();
+    	controlPoints.add(p0);
+    	controlPoints.add(p1);
+    	controlPoints.add(p2);
+    	controlPoints.add(p3);
+    	buildPoints(controlPoints);
     	//END SOLUTION
+    }
+    
+    private void buildPoints(ArrayList<Vector2> controlPoints) {
+    	Vector2 p0 = controlPoints.get(0);
+    	Vector2 p1 = controlPoints.get(1);
+    	Vector2 p2 = controlPoints.get(2);
+    	Vector2 p3 = controlPoints.get(3);
+    	
+    	float angle1 = p1.clone().sub(p0).angle(p2.clone().sub(p1));
+    	float angle2 = p2.clone().sub(p1).angle(p3.clone().sub(p2));
+    	//not sure if we need abs fuc or not
+    	if (Math.max(angle1, angle2) < this.epsilon / 2) {
+    		this.curvePoints.add(p0);
+    		
+    		Vector2 tangent = p1.clone().sub(p0);
+    		tangent.normalize();
+    		this.curveTangents.add(tangent);
+    		
+    		Vector2 normal = new Vector2();
+    		normal.x = tangent.y;
+    		normal.y = -tangent.x;
+    		this.curveNormals.add(normal);
+    		return;
+    	}
+    	
+    	
+    	Vector2 h = p1.clone().add(p2).div(2);
+    	
+    	//left info
+    	Vector2 l0 = new Vector2();
+    	l0.set(p0);
+    	Vector2 l1 = p0.clone().add(p1).div(2);
+    	Vector2 l2 = l1.clone().add(h).div(2);
+    	
+    	//right info 
+    	Vector2 r2 = p2.clone().add(p3).div(2);
+    	Vector2 r1 = h.clone().add(r2).div(2);
+    	Vector2 r0 = l2.clone().add(r1).div(2);
+    	Vector2 r3 = new Vector2();
+    	r3.set(p3);
+    	Vector2 l3 = l2.clone().add(r1).div(2);
+    	
+    	ArrayList<Vector2> lPoints = new ArrayList<Vector2>();
+    	lPoints.add(l0);
+    	lPoints.add(l1);
+    	lPoints.add(l2);
+    	lPoints.add(l3);
+    	
+    	ArrayList<Vector2> rPoints = new ArrayList<Vector2>();
+    	rPoints.add(r0);
+    	rPoints.add(r1);
+    	rPoints.add(r2);
+    	rPoints.add(r3);
+    	
+    	buildPoints(lPoints);
+    	buildPoints(rPoints);
+    	
     }
 	
     
@@ -121,4 +183,13 @@ public class CubicBezier {
     	for(Vector2 p : curveNormals) returnList.add(p);
     	return returnList;
     }
+    
+    public static void main(String[] args) {
+    	Vector2 p0 = new Vector2();
+    	Vector2 p1 = new Vector2();
+    	Vector2 p2 = new Vector2();
+    	Vector2 p3 = new Vector2();
+    	CubicBezier cb = new CubicBezier(p0, p1, p2, p3, (float)0.1);
+	}
+    
 }
