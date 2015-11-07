@@ -294,8 +294,8 @@ public abstract class SplineCurve {
 				Vector2 p = points.get(j);
 				
 				float Xx = (float) (p.x * Math.cos(outDegree));
-			    float Yy = p.y;
-			    float Zz = -(float) (p.x * Math.sin(outDegree));
+			    float Zz = p.y;
+			    float Yy = (float) (p.x * Math.sin(outDegree));
 			    data.positions.put(new float[] { Xx, Yy, Zz });
 			    
 			}
@@ -315,8 +315,8 @@ public abstract class SplineCurve {
 //				float innerRad = (float) (innerDegree * Math.PI / 180);
 				Vector2 n = normals.get(j);
 				float Xx = (float) (n.x * Math.cos(outDegree));;
-			    float Yy = n.y;
-			    float Zz =-(float) (n.x * Math.sin(outDegree));
+			    float Zz = n.y;
+			    float Yy = (float) (n.x * Math.sin(outDegree));
 			    data.normals.put(new float[] { Xx, Yy,  Zz });
 			}
 		}
