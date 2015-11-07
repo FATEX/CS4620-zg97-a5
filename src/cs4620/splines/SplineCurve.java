@@ -271,7 +271,7 @@ public abstract class SplineCurve {
 		data.vertexCount = (out+1)*(in+1);
 		data.indexCount = out*in*2*3;
 
-				// Create Storage Spaces
+		// Create Storage Spaces
 		data.positions = NativeMem.createFloatBuffer(data.vertexCount * 3);
 		
 		data.uvs = NativeMem.createFloatBuffer(data.vertexCount * 2);
@@ -313,11 +313,19 @@ public abstract class SplineCurve {
 			for(int j = 0; j <= in; j++){
 //				float innerDegree = 180 - unitinDegree * j;
 //				float innerRad = (float) (innerDegree * Math.PI / 180);
-				Vector2 n = normals.get(j);
+				/*Vector2 n = normals.get(j);
 				float Xx = (float) (n.x * Math.cos(outDegree));;
 			    float Zz = n.y;
 			    float Yy = (float) (n.x * Math.sin(outDegree));
 			    data.normals.put(new float[] { Xx, Yy,  Zz });
+			    */
+				Matrix4 rotate = Matrix4.createRotationZ(outDegree);
+				Vector4 n = new Vector4(normals.get(j).x, 0, normals.get(j).y, 1);
+				Vector4 normal = rotate.mul(n);
+				/*float Xx = (float) (n.x * Math.cos(outDegree));;
+			    float Yy = n.y;
+			    float Zz =-(float) (n.x * Math.sin(outDegree));*/
+			    data.normals.put(new float[] { normal.x, normal.y,  normal.z });
 			}
 		}
 		
