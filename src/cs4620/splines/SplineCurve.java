@@ -183,28 +183,29 @@ public abstract class SplineCurve {
 	private void setBeziers() {
 		//TODO A5
 		this.bezierCurves = new ArrayList<CubicBezier>();
+		int len = this.controlPoints.size();
 		if (!isClosed) {
-			for (int i = 1; i < this.controlPoints.size() - 2; i++) {
-				Vector2 p0 = this.controlPoints.get(i - 1);
-				Vector2 p1 = this.controlPoints.get(i);
-				Vector2 p2 = this.controlPoints.get(i + 1);
-				Vector2 p3 = this.controlPoints.get(i + 2);
+			for (int i = 1; i < this.controlPoints.size() - 1; i++) {
+				Vector2 p0 = this.controlPoints.get((i - 1)%len);
+				Vector2 p1 = this.controlPoints.get(i%len);
+				Vector2 p2 = this.controlPoints.get((i + 1)%len);
+				Vector2 p3 = this.controlPoints.get((i + 2)%len);
 				this.bezierCurves.add(this.toBezier(p0, p1, p2, p3, this.epsilon));
 			}
 		} else {
-			for (int i = 1; i < this.controlPoints.size() - 2; i++) {
-				Vector2 p0 = this.controlPoints.get(i - 1);
-				Vector2 p1 = this.controlPoints.get(i);
-				Vector2 p2 = this.controlPoints.get(i + 1);
-				Vector2 p3 = this.controlPoints.get(i + 2);
+			for (int i = 0; i < this.controlPoints.size() ; i++) {
+				Vector2 p0 = this.controlPoints.get((i + this.controlPoints.size() - 1)%len);
+				Vector2 p1 = this.controlPoints.get(i%len);
+				Vector2 p2 = this.controlPoints.get((i + 1)%len);
+				Vector2 p3 = this.controlPoints.get((i + 2)%len);
 				this.bezierCurves.add(this.toBezier(p0, p1, p2, p3, this.epsilon));
 			}
-			int index = this.controlPoints.size() - 2;
-			Vector2 p0 = this.controlPoints.get(index - 1);
-			Vector2 p1 = this.controlPoints.get(index);
-			Vector2 p2 = this.controlPoints.get(index + 1);
-			Vector2 p3 = this.controlPoints.get(0);
-			this.bezierCurves.add(this.toBezier(p0, p1, p2, p3, this.epsilon));
+//			int index = this.controlPoints.size() - 1;
+//			Vector2 p0 = this.controlPoints.get(index - 1);
+//			Vector2 p1 = this.controlPoints.get(index);
+//			Vector2 p2 = this.controlPoints.get(0);
+//			Vector2 p3 = this.controlPoints.get(1);
+//			this.bezierCurves.add(this.toBezier(p0, p1, p2, p3, this.epsilon));
 		}
 		
 		
@@ -264,7 +265,90 @@ public abstract class SplineCurve {
 		 * 
 		 * Then set the data of positions / normals / indices with what you have calculated.
 		 */
+		// Calculate Vertex And Index Count
+		int out = (int)Math.ceil((2 * Math.PI / sliceTolerance));
+		int in = crossSection.getPoints().size()-1;
+		data.vertexCount = (out+1)*(in+1);
+		data.indexCount = out*in*2*3;
 
+				// Create Storage Spaces
+		data.positions = NativeMem.createFloatBuffer(data.vertexCount * 3);
+		
+		data.uvs = NativeMem.createFloatBuffer(data.vertexCount * 2);
+		data.normals = NativeMem.createFloatBuffer(data.vertexCount * 3);
+		data.indices = NativeMem.createIntBuffer(data.indexCount);
+		float unitinDegree = (float) ((float)2 * Math.PI / in);
+		float unitoutDegree = (float) ((float)2 * Math.PI / out);
+		
+		ArrayList<Vector2> points = crossSection.getPoints();
+		for(int i = 0; i<=out; i++){
+			float outDegree = unitoutDegree * i;
+//			float outRad = (float) (outDegree * Math.PI / 180);
+//			float Xc = -(float) Math.sin(outDegree);
+//		    float Yc = (float)0;
+//		    float Zc = -(float) Math.cos(outDegree);
+		    // every point on curve
+			for(int j = 0; j <= in; j++){
+				//float innerDegree = 180-unitinDegree * j;
+				//float innerRad = (float) (innerDegree * Math.PI / 180);
+				Vector2 p = points.get(j);
+				
+				float Xx = (float) (p.x * Math.cos(outDegree));
+			    float Yy = p.y;
+			    float Zz = -(float) (p.x * Math.sin(outDegree));
+			    data.positions.put(new float[] { Xx, Yy, Zz });
+			    
+			}
+		}
+		
+		// Compute Normals
+		ArrayList<Vector2> normals = crossSection.getNormals();
+		
+		for(int i = 0; i<=out; i++){
+			float outDegree = unitoutDegree * i;
+//			float outRad = (float) (outDegree * Math.PI / 180);
+//			float Xc = -(float) Math.sin(outRad);
+//		    float Yc = (float)0;
+//		    float Zc = -(float) Math.cos(outRad);
+			for(int j = 0; j <= in; j++){
+//				float innerDegree = 180 - unitinDegree * j;
+//				float innerRad = (float) (innerDegree * Math.PI / 180);
+				Vector2 n = normals.get(j);
+				float Xx = (float) (n.x * Math.cos(outDegree));;
+			    float Yy = n.y;
+			    float Zz =-(float) (n.x * Math.sin(outDegree));
+			    data.normals.put(new float[] { Xx, Yy,  Zz });
+			}
+		}
+		
+		// Add UV Coordinates
+			float unitInner = (float) 1 / in;
+			float unitOuter = (float) 1 / out;
+			for (int i = 0; i <= out; i++) {
+				float x= unitOuter * i;
+				for (int j = in; j >= 0; j--) {
+					float y = unitInner * j;
+					data.uvs.put(new float[] { x, y });
+				}
+			}
+			
+		// Add Indices
+		
+		for(int i = 0; i < out; i++){
+			for(int j = 0; j < in; j++){
+				int index = j + i*(in+1);
+				data.indices.put(index);
+				data.indices.put(index + 1);
+				data.indices.put(index + in + 1);
+				data.indices.put(index + 1);
+				data.indices.put(index + 1 + in + 1);
+				data.indices.put(index + in + 1);
+				
+				
+			}
+		}
+		
+		
 	}
 }
 

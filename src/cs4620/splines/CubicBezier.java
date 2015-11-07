@@ -8,7 +8,7 @@ import egl.math.Vector2;
  */
 
 public class CubicBezier {
-	
+	private int count = 0;
 	//This Bezier's control points
 	public Vector2 p0, p1, p2, p3;
 	
@@ -72,13 +72,41 @@ public class CubicBezier {
     }
     
     private void buildPoints(ArrayList<Vector2> controlPoints) {
+    	if(count > 10) return;
     	Vector2 p0 = controlPoints.get(0);
     	Vector2 p1 = controlPoints.get(1);
     	Vector2 p2 = controlPoints.get(2);
     	Vector2 p3 = controlPoints.get(3);
     	
-    	float angle1 = p1.clone().sub(p0).angle(p2.clone().sub(p1));
-    	float angle2 = p2.clone().sub(p1).angle(p3.clone().sub(p2));
+    	System.out.println(p0);
+    	System.out.println(p1);
+    	System.out.println(p2);
+    	System.out.println(p3);
+    	
+    	Vector2 v1 = p1.clone().sub(p0);
+    	Vector2 v2 = p2.clone().sub(p1);
+    	System.out.println(v1);
+    	System.out.println(v2);
+    	float angle1 = 0;
+    	
+    	//if (!v1.normalize().equals(v2.normalize())) angle1 = p1.clone().sub(p0).angle(p2.clone().sub(p1));
+    	try{
+    		angle1 = p1.clone().sub(p0).angle(p2.clone().sub(p1));
+    	}catch(Exception e){
+    		System.out.println("00000000000");
+    	}
+    	
+    	float angle2 = 0;	
+    	v1 = p2.clone().sub(p1);
+    	v2 = p3.clone().sub(p2);
+    	
+    	//if (!v1.normalize().equals(v2.normalize())) angle2 = p2.clone().sub(p1).angle(p3.clone().sub(p2));
+    	try{
+    		angle2 = p1.clone().sub(p0).angle(p2.clone().sub(p1));
+    	}catch(Exception e){
+    		
+    	}
+  
     	//not sure if we need abs fuc or not
     	if (Math.max(angle1, angle2) < this.epsilon / 2) {
     		this.curvePoints.add(p0);
@@ -91,6 +119,7 @@ public class CubicBezier {
     		normal.x = tangent.y;
     		normal.y = -tangent.x;
     		this.curveNormals.add(normal);
+    		//System.out.println("out");
     		return;
     	}
     	
@@ -122,10 +151,10 @@ public class CubicBezier {
     	rPoints.add(r1);
     	rPoints.add(r2);
     	rPoints.add(r3);
-    	
+    //	System.out.println("next");
+    	count++;
     	buildPoints(lPoints);
     	buildPoints(rPoints);
-    	
     }
 	
     
@@ -185,11 +214,15 @@ public class CubicBezier {
     }
     
     public static void main(String[] args) {
-    	Vector2 p0 = new Vector2();
-    	Vector2 p1 = new Vector2();
-    	Vector2 p2 = new Vector2();
-    	Vector2 p3 = new Vector2();
+    	Vector2 p0 = new Vector2(0,0);
+    	Vector2 p1 = new Vector2(1,1);
+    	Vector2 p2 = new Vector2(2,2);
+    	Vector2 p3 = new Vector2(4,4);
     	CubicBezier cb = new CubicBezier(p0, p1, p2, p3, (float)0.1);
+    	System.out.println(cb.curvePoints);
+    	System.out.println(cb.curveTangents);
+    	System.out.println(cb.curveNormals);
+    	
 	}
     
 }

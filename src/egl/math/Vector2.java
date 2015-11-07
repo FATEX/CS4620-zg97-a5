@@ -557,7 +557,8 @@ public class Vector2 extends AbstractList<Float> implements Cloneable {
 	 * @return Angle Between Vectors (Radians)
 	 */
 	public float angle(Vector2 v) {
-		return (float)Math.acos(dot(v) / (len() * v.len()));
+		if(dot(v) / (len() * v.len())<1.05 && dot(v) / (len() * v.len())>1) return 0;
+		else return (float)Math.acos(dot(v) / (len() * v.len()));
 	}
 	
 	/**
