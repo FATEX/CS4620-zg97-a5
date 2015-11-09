@@ -267,9 +267,10 @@ public abstract class SplineCurve {
 		 */
 		// Calculate Vertex And Index Count
 		int out = (int)Math.ceil((2 * Math.PI / sliceTolerance));
-		int in = crossSection.getPoints().size()-1;
+		int in = crossSection.getPoints().size();
+		int length = crossSection.getPoints().size();
 		data.vertexCount = (out+1)*(in+1);
-		data.indexCount = out*in*2*3;
+		data.indexCount = out*in*2*3 + (out+1)*6;
 
 		// Create Storage Spaces
 		data.positions = NativeMem.createFloatBuffer(data.vertexCount * 3);
@@ -288,10 +289,10 @@ public abstract class SplineCurve {
 //		    float Yc = (float)0;
 //		    float Zc = -(float) Math.cos(outDegree);
 		    // every point on curve
-			for(int j = 0; j <= in; j++){
+			for(int j = in; j >= 0; j--){
 				//float innerDegree = 180-unitinDegree * j;
 				//float innerRad = (float) (innerDegree * Math.PI / 180);
-				Vector2 p = points.get(j);
+				Vector2 p = points.get(j%length);
 				
 				float Xx = (float) (p.x * Math.cos(outDegree));
 			    float Zz = p.y;
@@ -306,11 +307,8 @@ public abstract class SplineCurve {
 		
 		for(int i = 0; i<=out; i++){
 			float outDegree = unitoutDegree * i;
-//			float outRad = (float) (outDegree * Math.PI / 180);
-//			float Xc = -(float) Math.sin(outRad);
-//		    float Yc = (float)0;
-//		    float Zc = -(float) Math.cos(outRad);
-			for(int j = 0; j <= in; j++){
+
+			for(int j = in; j >= 0; j--){
 //				float innerDegree = 180 - unitinDegree * j;
 //				float innerRad = (float) (innerDegree * Math.PI / 180);
 				/*Vector2 n = normals.get(j);
@@ -320,28 +318,21 @@ public abstract class SplineCurve {
 			    data.normals.put(new float[] { Xx, Yy,  Zz });
 			    */
 				Matrix4 rotate = Matrix4.createRotationZ(outDegree);
-				Vector4 n = new Vector4(normals.get(j).x, 0, normals.get(j).y, 1);
+				Vector4 n = new Vector4(normals.get(j%length).x, 0, normals.get(j%length).y, 1);
 				Vector4 normal = rotate.mul(n);
 				/*float Xx = (float) (n.x * Math.cos(outDegree));;
-			    float Yy = n.y;
-			    float Zz =-(float) (n.x * Math.sin(outDegree));*/
-			    data.normals.put(new float[] { normal.x, normal.y,  normal.z });
+			    float Yy = (float) (n.x * Math.sin(outDegree));
+			    float Zz = n.y;*/
+				Vector3 normal3 = new Vector3(normal.x, normal.y,  normal.z );
+				normal3.normalize();
+			    data.normals.put(new float[] { normal3.x, normal3.y,  normal3.z });
 			}
 		}
 		
-		// Add UV Coordinates
-			float unitInner = (float) 1 / in;
-			float unitOuter = (float) 1 / out;
-			for (int i = 0; i <= out; i++) {
-				float x= unitOuter * i;
-				for (int j = in; j >= 0; j--) {
-					float y = unitInner * j;
-					data.uvs.put(new float[] { x, y });
-				}
-			}
+		
 			
 		// Add Indices
-		
+		int num = data.vertexCount;
 		for(int i = 0; i < out; i++){
 			for(int j = 0; j < in; j++){
 				int index = j + i*(in+1);
@@ -351,8 +342,7 @@ public abstract class SplineCurve {
 				data.indices.put(index + 1);
 				data.indices.put(index + 1 + in + 1);
 				data.indices.put(index + in + 1);
-				
-				
+								
 			}
 		}
 		
