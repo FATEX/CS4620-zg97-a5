@@ -1,12 +1,14 @@
 package cs4620.splines;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import cs4620.mesh.MeshData;
 import egl.NativeMem;
+import egl.math.Matrix3;
 import egl.math.Matrix4;
 import egl.math.Vector2;
 import egl.math.Vector3;
-import egl.math.Vector3i;
 import egl.math.Vector4;
 
 
@@ -270,7 +272,7 @@ public abstract class SplineCurve {
 		int in = crossSection.getPoints().size();
 		int length = crossSection.getPoints().size();
 		data.vertexCount = (out+1)*(in+1);
-		data.indexCount = out*in*2*3 + (out+1)*6;
+		data.indexCount = out*in*2*3;
 
 		// Create Storage Spaces
 		data.positions = NativeMem.createFloatBuffer(data.vertexCount * 3);
@@ -284,20 +286,16 @@ public abstract class SplineCurve {
 		ArrayList<Vector2> points = crossSection.getPoints();
 		for(int i = 0; i<=out; i++){
 			float outDegree = unitoutDegree * i;
-//			float outRad = (float) (outDegree * Math.PI / 180);
-//			float Xc = -(float) Math.sin(outDegree);
-//		    float Yc = (float)0;
-//		    float Zc = -(float) Math.cos(outDegree);
-		    // every point on curve
-			for(int j = in; j >= 0; j--){
-				//float innerDegree = 180-unitinDegree * j;
-				//float innerRad = (float) (innerDegree * Math.PI / 180);
-				Vector2 p = points.get(j%length);
-				
-				float Xx = (float) (p.x * Math.cos(outDegree));
-			    float Zz = p.y;
-			    float Yy = (float) (p.x * Math.sin(outDegree));
-			    data.positions.put(new float[] { Xx, Yy, Zz });
+			for(int j = 0; j <= in; j++){
+				Vector3 p = new Vector3(points.get(j%length).x * scale,points.get(j%length).y * scale,0);
+				Matrix3 rx = Matrix3.createRotationX((float)Math.PI/2);
+				p = rx.clone().mul(p.clone());
+//				float Xx = (float) (p.x * Math.cos(outDegree));
+//			    float Zz = p.y;
+//			    float Yy = (float) (p.x * Math.sin(outDegree));
+				Matrix3 rotate = Matrix3.createRotationZ(outDegree);
+				Vector3 point = rotate.mul(p);
+			    data.positions.put(new float[] { point.x, point.y,point.z });
 			    
 			}
 		}
@@ -308,21 +306,16 @@ public abstract class SplineCurve {
 		for(int i = 0; i<=out; i++){
 			float outDegree = unitoutDegree * i;
 
-			for(int j = in; j >= 0; j--){
-//				float innerDegree = 180 - unitinDegree * j;
-//				float innerRad = (float) (innerDegree * Math.PI / 180);
-				/*Vector2 n = normals.get(j);
-				float Xx = (float) (n.x * Math.cos(outDegree));;
-			    float Zz = n.y;
-			    float Yy = (float) (n.x * Math.sin(outDegree));
-			    data.normals.put(new float[] { Xx, Yy,  Zz });
-			    */
-				Matrix4 rotate = Matrix4.createRotationZ(outDegree);
-				Vector4 n = new Vector4(normals.get(j%length).x, 0, normals.get(j%length).y, 1);
-				Vector4 normal = rotate.mul(n);
-				/*float Xx = (float) (n.x * Math.cos(outDegree));;
-			    float Yy = (float) (n.x * Math.sin(outDegree));
-			    float Zz = n.y;*/
+			for(int j = 0; j <= in; j++){
+				Matrix3 rotate = Matrix3.createRotationZ(outDegree);
+				Vector3 nn = new Vector3(normals.get(j%length).x,normals.get(j%length).y,0) ;
+				
+				Matrix3 rx = Matrix3.createRotationX((float)Math.PI/2);
+				nn = rx.clone().mul(nn.clone());
+				//Vector4 n = new Vector4(nn.x, 0, nn.y, 1);
+				Vector3 normal = rotate.mul(nn);
+				//Vector3 normal = new Vector3(normals.get(j%length).x*(float)Math.cos(outDegree),normals.get(j%length).x*(float)Math.sin(outDegree),normals.get(j%length).y);
+				//Vector4 normal = rotate.invert().transpose().mul(n);
 				Vector3 normal3 = new Vector3(normal.x, normal.y,  normal.z );
 				normal3.normalize();
 			    data.normals.put(new float[] { normal3.x, normal3.y,  normal3.z });
@@ -336,16 +329,49 @@ public abstract class SplineCurve {
 		for(int i = 0; i < out; i++){
 			for(int j = 0; j < in; j++){
 				int index = j + i*(in+1);
-				data.indices.put(index);
-				data.indices.put(index + 1);
+				
 				data.indices.put(index + in + 1);
 				data.indices.put(index + 1);
+				data.indices.put(index);
+				
+				
 				data.indices.put(index + 1 + in + 1);
+				data.indices.put(index + 1);
 				data.indices.put(index + in + 1);
 								
 			}
 		}
 		
+		PrintWriter writer;
+		try {
+			writer = new PrintWriter("the-file-name.obj");
+			data.positions.rewind();
+			data.normals.rewind();
+			data.indices.rewind();
+			for (int i = 0; i < data.vertexCount * 3 - 3; i = i + 3) {
+				writer.print("v " + data.positions.get(i));
+				writer.print(" " + data.positions.get(i + 1));
+				writer.println(" " + data.positions.get(i + 2));
+			}
+			
+			for (int j = 0; j < data.vertexCount * 3 - 3; j = j + 3) {
+				writer.print("vn " +data.normals.get(j));
+				writer.print(" " +data.normals.get(j + 1));
+				writer.println(" " +data.normals.get(j + 2));
+			}
+			
+			
+			for (int k = 0; k < data.indexCount - 3; k = k +3) {
+				writer.print("f " + data.indices.get(k));
+				writer.print(" " + data.indices.get(k + 1));
+				writer.println(" " + data.indices.get(k + 2));
+			}
+			//writer.println("The second line");
+			writer.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 		
 	}
 }

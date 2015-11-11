@@ -2,6 +2,7 @@ package cs4620.splines;
 
 import java.util.ArrayList;
 
+import egl.math.Matrix3;
 import egl.math.Vector2;
 /*
  * Cubic Bezier class for the splines assignment
@@ -48,7 +49,7 @@ public class CubicBezier {
 		this.p1 = new Vector2(p1);
 		this.p2 = new Vector2(p2);
 		this.p3 = new Vector2(p3);
-		
+		count = 0;
 		tessellate();
 	}
 	
@@ -72,7 +73,8 @@ public class CubicBezier {
     }
     
     private void buildPoints(ArrayList<Vector2> controlPoints) {
-    	if(count > 10) return;
+    	count++;
+    	if(count > 30) return;
     	Vector2 p0 = controlPoints.get(0);
     	Vector2 p1 = controlPoints.get(1);
     	Vector2 p2 = controlPoints.get(2);
@@ -115,9 +117,12 @@ public class CubicBezier {
     		tangent.normalize();
     		this.curveTangents.add(tangent);
     		
-    		Vector2 normal = new Vector2();
-    		normal.x = tangent.y;
-    		normal.y = -tangent.x;
+//    		Vector2 normal = new Vector2();
+//    		normal.x = tangent.y;
+//    		normal.y = -tangent.x;
+    		Matrix3 rotateT = Matrix3.createRotation((float)-Math.PI/2);
+    		Vector2 normal = new Vector2(rotateT.clone().mul(tangent.clone()));
+    		normal.normalize();
     		this.curveNormals.add(normal);
     		//System.out.println("out");
     		return;
@@ -152,7 +157,7 @@ public class CubicBezier {
     	rPoints.add(r2);
     	rPoints.add(r3);
     //	System.out.println("next");
-    	count++;
+    	
     	buildPoints(lPoints);
     	buildPoints(rPoints);
     }
